@@ -71,27 +71,23 @@ class STVQA_Task:
                 optimizer.zero_grad()
                 fused_output, fused_mask  = self.base_model(item['question'],item['image_id'],item['answer'])
                 labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
-                logits, loss = self.decoder(fused_output,fused_mask,labels['input_ids'])
-                loss.backward()
-                optimizer.step()
-                train_loss += loss.item()
+                logits, loss = self.decoder.train_forward(fused_output,fused_mask,labels['input_ids'])
+                train_loss += loss
+            train_loss /=len(train)
             print(f"epoch {epoch + 1}/{self.num_epochs + initial_epoch}")
             print(f"train loss: {train_loss:.4f}")
-            with torch.no_grad():
-                for item in valid:
-                    optimizer.zero_grad()
-                    fused_output, fused_mask  = self.base_model(item['question'],item['image_id'],item['answer'])
-                    labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
-                    logits, loss = self.decoder(fused_output,fused_mask,labels['input_ids'])
-                    loss.backward()
-                    optimizer.step()
-                    train_loss += loss.item()
-                    wups,acc,f1 = self.compute_score(logits,item['answer'])
-                    valid_wups+=wups
-                    valid_acc+=acc
-                    valid_f1+=f1
-            train_loss /= len(train)
-            valid_loss /= len(valid)
+            
+            for item in valid:
+                optimizer.zero_grad()
+                fused_output, fused_mask  = self.base_model(item['question'],item['image_id'],item['answer'])
+                labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
+                logits, loss = self.decoder.eval_forward(fused_output,fused_mask,labels['input_ids'])
+                valid_loss += loss
+                wups,acc,f1 = self.compute_score.compute_metrics(item['answer'],logits)
+                valid_wups+=wups
+                valid_acc+=acc
+                valid_f1+=f1
+            valid_loss /=len(valid)
             valid_wups /= len(valid)
             valid_acc /= len(valid)
             valid_f1 /= len(valid)
