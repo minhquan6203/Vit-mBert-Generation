@@ -11,23 +11,24 @@ from model.model_gen import createMultimodalModelForVQA
 from data_utils.load_data import create_ans_space
 from decoder_module.decoder import Decoder
 from eval_metric.evaluate import WuPalmerScoreCalculator
+
 class STVQA_Task:
     def __init__(self, config):
         self.num_epochs = config['train']['num_train_epochs']
         self.patience = config['train']['patience']
-        self.data_folder=config['data']['data_folder']
-        self.train_path = config['data']['train_path']
+        self.data_folder=config['data']['dataset_folder']
+        self.train_path = config['data']['train_dataset']
         self.valid_path=config["data"]["val_dataset"]
         self.test_path=config["data"]["test_dataset"]
         self.learning_rate = config['train']['learning_rate']
-        self.train_batch=config['train'][' per_device_train_batch_size']
-        self.test_batch=config['train'][' per_device_train_test_size']
-        self.valid_batch=config['train']['per_device_train_valid_size']
+        self.train_batch=config['train']['per_device_train_batch_size']
+        self.test_batch=config['train']['per_device_eval_batch_size']
+        self.valid_batch=config['train']['per_device_valid_batch_size']
         self.save_path = config['train']['output_dir']
         self.dataloader = Load_Data(config)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.tokenizer = AutoTokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
-        self.decoder = Decoder(config)
+        self.decoder = Decoder(config).to(self.device)
         self.base_model=createMultimodalModelForVQA(config).to(self.device)
         self.compute_score = WuPalmerScoreCalculator(config)
 
@@ -70,17 +71,18 @@ class STVQA_Task:
                 optimizer.zero_grad()
                 fused_output, fused_mask  = self.base_model(item['question'],item['image_id'],item['answer'])
                 labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
-                logits, loss = self.decoder(fused_output,fused_mask,labels)
+                logits, loss = self.decoder(fused_output,fused_mask,labels['input_ids'])
                 loss.backward()
                 optimizer.step()
                 train_loss += loss.item()
-
+            print(f"epoch {epoch + 1}/{self.num_epochs + initial_epoch}")
+            print(f"train loss: {train_loss:.4f}")
             with torch.no_grad():
                 for item in valid:
                     optimizer.zero_grad()
                     fused_output, fused_mask  = self.base_model(item['question'],item['image_id'],item['answer'])
                     labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
-                    logits, loss = self.decoder(fused_output,fused_mask,labels)
+                    logits, loss = self.decoder(fused_output,fused_mask,labels['input_ids'])
                     loss.backward()
                     optimizer.step()
                     train_loss += loss.item()
@@ -94,9 +96,6 @@ class STVQA_Task:
             valid_acc /= len(valid)
             valid_f1 /= len(valid)
             
-
-            print(f"epoch {epoch + 1}/{self.num_epochs + initial_epoch}")
-            print(f"train loss: {train_loss:.4f}")
             print(f"valid loss: {valid_loss:.4f} valid wups: {valid_wups:.4f} valid acc: {valid_acc:.4f} valid f1: {valid_f1}")
 
             # save the last model

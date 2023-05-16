@@ -7,7 +7,7 @@ from datasets import load_dataset
 
 class Load_Data:
     def __init__(self, config: Dict):
-        self.data_folder = config['data']['data_folder']
+        self.data_folder = config['data']['dataset_folder']
         self.num_worker = config['data']['num_worker']
     
     def __getitem__(self, idx: int):
@@ -28,7 +28,7 @@ class Load_Data:
         annotations = []
         for ann in json_data["annotations"]:
             question = ann["question"]
-            answer = ann['anwers'][0]
+            answer = ann['answers'][0]
             annotation = {
                 "question": question,
                 "answer": answer,
@@ -38,7 +38,7 @@ class Load_Data:
         return annotations
    
     def get_dataloader(self,json_name,batch_size):
-        dataset,_=self.load_annotations(json_name)
+        dataset=self.load_annotations(json_name)
         dataloader = DataLoader(
             dataset,
             batch_size=batch_size,

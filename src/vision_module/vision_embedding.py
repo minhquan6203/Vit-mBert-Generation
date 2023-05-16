@@ -22,7 +22,8 @@ class Vision_Embedding(nn.Module):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.data_folder = config["data"]["dataset_folder"]
         self.image_folder = config["data"]["images_folder"]
-    def forward(self, images: List[str]):
+    def forward(self, images):
+        images=images.tolist()
         processed_images = self.preprocessor(
             images=[
                 Image.open(os.path.join(self.data_folder,self.image_folder, str(image_id).zfill(12) + ".jpg")

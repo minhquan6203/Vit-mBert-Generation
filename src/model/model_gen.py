@@ -11,7 +11,7 @@ from transformers import AutoTokenizer
 
 #lấy ý tưởng từ MCAN
 class MultimodalVQAModel(nn.Module):
-    def __init__(self,config: Dict, answer_space):
+    def __init__(self,config: Dict):
      
         super(MultimodalVQAModel, self).__init__()
         self.intermediate_dims = config["model"]["intermediate_dims"]
@@ -39,8 +39,6 @@ class MultimodalVQAModel(nn.Module):
         encoded_text, encoded_image = self.encoder(embbed_text, text_mask, embbed_vision, vison_mask)        
         fused_output = self.fusion(torch.cat([encoded_text, encoded_image], dim=1))
         fused_output = self.linear(fused_output)
-        
-        answers_ids = answers['input_ids']
         fused_mask = self.fusion(torch.cat([text_mask.squeeze(1).squeeze(1),vison_mask.squeeze(1).squeeze(1)],dim=1))
         return fused_output,fused_mask
 
