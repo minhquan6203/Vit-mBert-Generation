@@ -5,6 +5,28 @@ from nltk.corpus import wordnet
 from transformers import  AutoModel, AutoTokenizer
 import torch
 
+#F1 score
+class F1:
+  def Precision(self,y_true,y_pred):
+    common = set(y_true) & set(y_pred)
+    return len(common) / len(set(y_pred))
+
+  def Recall(self,y_true,y_pred):
+    common = set(y_true) & set(y_pred)
+    return len(common) / len(set(y_true))
+
+  def Compute(self,y_true,y_pred):
+    if len(y_pred) == 0 or len(y_true) == 0:
+        return int(y_pred == y_true)
+
+    precision = self.Precision(y_true, y_pred)
+    recall = self.Recall(y_true, y_pred)
+
+    if precision == 0 or recall == 0:
+        return 0
+    f1 = 2*precision*recall / (precision+recall)
+    return f1
+  
 
 class WuPalmerScoreCalculator:
     def __init__(self,config: Dict):
@@ -76,12 +98,25 @@ class WuPalmerScoreCalculator:
     def accuracy(self,labels: List[str], preds: List[str]) -> float:
         return accuracy_score(labels,preds)
     
-    def f1(self,labels: List[str], preds: List[str]) -> float:
-        return f1_score(labels,preds, average='macro')
+    #F1 score character level
+    def F1_char(self,labels: List[str], preds: List[str]) -> float:
+        f1=F1()
+        scores=[]
+        for i in range(len(labels)):
+            scores.append(f1.Compute(labels[i],preds[i]))
+        return np.mean(scores)
+
+    #F1 score token level
+    def F1_token(labels: List[str], preds: List[str]) -> float:
+        f1=F1()
+        scores=[]
+        for i in range(len(labels)):
+            scores.append(f1.Compute(labels[i].split(),preds[i].split()))
+        return np.mean(scores)
 
     def compute_metrics(self, labels: List[str], logits: torch.Tensor) -> Dict[str, float]:
         prediction_probabilities = torch.nn.functional.softmax(logits, dim=-1)
         prediction_indices = prediction_probabilities.argmax(dim=-1)
         preds = self.tokenizer.batch_decode(prediction_indices)
 
-        return self.batch_wup_measure(labels, preds), self.accuracy(labels, preds), self.f1(labels, preds)
+        return self.batch_wup_measure(labels, preds), self.accuracy(labels, preds), self.F1_token(labels, preds)

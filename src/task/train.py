@@ -55,9 +55,9 @@ class STVQA_Task:
 
         if os.path.exists(os.path.join(self.save_path, 'best_model.pth')):
             checkpoint = torch.load(os.path.join(self.save_path, 'best_model.pth'))
-            best_valid_acc = checkpoint['valid_acc']
+            best_valid_f1 = checkpoint['valid_f1']
         else:
-            best_valid_acc = 0.
+            best_valid_f1 = 0.
             
         threshold=0
         self.base_model.train()
@@ -97,22 +97,22 @@ class STVQA_Task:
                 'epoch': epoch,
                 'model_state_dict': self.base_model.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
-                'valid_acc': valid_acc}, os.path.join(self.save_path, 'last_model.pth'))
+                'valid_f1': valid_f1}, os.path.join(self.save_path, 'last_model.pth'))
 
             # save the best model
 
-            if epoch > 0 and valid_acc < best_valid_acc:
+            if epoch > 0 and valid_f1 < best_valid_f1:
               threshold += 1
             else:
               threshold = 0
 
-            if valid_acc > best_valid_acc:
-                best_valid_acc = valid_acc
+            if valid_f1 > best_valid_f1:
+                best_valid_f1 = valid_f1
                 torch.save({
                     'epoch': epoch,
                     'model_state_dict': self.base_model.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
-                    'valid_acc': valid_acc,}, os.path.join(self.save_path, 'best_model.pth'))
+                    'valid_f1': valid_f1,}, os.path.join(self.save_path, 'best_model.pth'))
                 print(f"saved the best model with validation accuracy of {valid_acc:.4f}")
             
             # early stopping
