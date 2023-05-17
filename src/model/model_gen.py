@@ -30,7 +30,7 @@ class MultimodalVQAModel(nn.Module):
         self.encoder = CoAttentionEncoder(config)
         self.attention_weights = nn.Linear(self.intermediate_dims, 1)
         self.criterion = nn.CrossEntropyLoss()
-        self.linear = nn.Linear(self.intermediate_dims,768)
+        self.linear = nn.Linear(self.intermediate_dims,config['decoder']['d_model'])
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     def forward(self, questions: List[str], images: List[str]):

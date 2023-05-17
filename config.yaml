@@ -45,7 +45,7 @@ encoder:
 
 decoder:
   text_decoder: bert-base-multilingual-uncased
-  d_model: 512
+  d_model: 768
   layers: 3
   max_len: 64
 
