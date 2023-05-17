@@ -20,7 +20,7 @@ class Decoder(nn.Module):
         mask = mask.to(torch.float32)
         return mask.unsqueeze(1)
     
-    def forward(self, encoder_features: torch.Tensor, answer_ids: torch.Tensor=None): 
+    def forward(self, encoder_features: torch.Tensor,encoder_attention_mask: torch.Tensor, answer_ids: torch.Tensor=None): 
         # Add padding to labels
         max_length = self.max_len
         answer_ids = F.pad(answer_ids, (0, max_length - answer_ids.size(1)), value=0)
