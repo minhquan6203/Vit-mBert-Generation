@@ -69,7 +69,7 @@ class STVQA_Task:
             valid_loss = 0.
             for item in train:
                 optimizer.zero_grad()
-                fused_output, fused_mask  = self.base_model(item['question'],item['image_id'],item['answer'])
+                fused_output, fused_mask  = self.base_model(item['question'],item['image_id'])
                 labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
                 logits, loss = self.decoder.train_forward(fused_output,fused_mask,labels['input_ids'])
                 train_loss += loss
@@ -79,7 +79,7 @@ class STVQA_Task:
             
             for item in valid:
                 optimizer.zero_grad()
-                fused_output, fused_mask  = self.base_model(item['question'],item['image_id'],item['answer'])
+                fused_output, fused_mask  = self.base_model(item['question'],item['image_id'])
                 labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
                 logits, loss = self.decoder.eval_forward(fused_output,fused_mask,labels['input_ids'])
                 valid_loss += loss

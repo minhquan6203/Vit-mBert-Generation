@@ -17,7 +17,6 @@ class Decoder(nn.Module):
         outputs = self.gen(inputs_embeds=encoder_features, attention_mask=encoder_attention_mask, labels=answer_ids)
         outputs.loss.backward()
         optimizer.step()
-        print(outputs.loss)
         return outputs.logits, outputs.loss
 
     def eval_forward(self, encoder_features: torch.Tensor, encoder_attention_mask: torch.Tensor, answer_ids: torch.Tensor=None):
