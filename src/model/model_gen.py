@@ -92,8 +92,7 @@ class MultimodalVQAModel(nn.Module):
         fused_mask = self.fusion(torch.cat([text_mask.squeeze(1).squeeze(1),vison_mask.squeeze(1).squeeze(1)],dim=1))
         
         labels = self.tokenizer.batch_encode_plus(answers,padding='longest',truncation=True,return_tensors='pt').to(self.device)
-        # logits,loss = self.decoder(fused_output,fused_mask,labels['input_ids'])
-        logits,loss = self.decoder(fused_output,labels['input_ids'])
+        logits,loss = self.decoder(fused_output,fused_mask,labels['input_ids'])
         return logits,loss
 
 def createMultimodalModelForVQA(config: Dict) -> MultimodalVQAModel:

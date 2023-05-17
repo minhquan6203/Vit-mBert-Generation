@@ -3,7 +3,7 @@ base:
 
 data:
   dataset_folder: data
-  images_folder: images_total_data
+  images_folder: train
   train_dataset: train.json
   val_dataset: dev.json
   test_dataset: test.json
@@ -46,6 +46,7 @@ encoder:
 decoder:
   text_decoder: bert-base-multilingual-uncased
   d_model: 768
+  layers: 3
   max_len: 32
 
 model:
@@ -59,14 +60,14 @@ train:
   seed: 12345
   num_train_epochs: 100
   patience: 5
-  learning_rate: 5.0e-7
+  learning_rate: 2
   weight_decay: 0.0
   warmup_ratio: 0.0
   warmup_steps: 0
   metric_for_best_model: accuracy
-  per_device_train_batch_size: 128
-  per_device_valid_batch_size: 128
-  per_device_eval_batch_size: 128
+  per_device_train_batch_size: 64
+  per_device_valid_batch_size: 64
+  per_device_eval_batch_size: 64
 
 inference:
   checkpoint: checkpoint-3

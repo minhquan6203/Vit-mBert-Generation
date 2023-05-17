@@ -68,6 +68,7 @@ class STVQA_Task:
             train_loss = 0.
             valid_loss = 0.
             for item in train:
+                self.optimizer.zero_grad()
                 logits, loss = self.base_model(item['question'],item['image_id'],item['answer'])
                 loss.backward()
                 self.optimizer.step()
@@ -79,6 +80,7 @@ class STVQA_Task:
             
             with torch.no_grad():
                 for item in valid:
+                    self.optimizer.zero_grad()
                     logits, loss = self.base_model(item['question'],item['image_id'],item['answer'])
                     valid_loss += loss
                     wups,acc,f1 = self.compute_score.compute_metrics(item['answer'],logits)
@@ -90,7 +92,7 @@ class STVQA_Task:
             valid_acc /= len(valid)
             valid_f1 /= len(valid)
             
-            print(f"valid loss: {valid_loss:.4f} valid wups: {valid_wups:.4f} valid acc: {valid_acc:.4f} valid f1: {valid_f1}")
+            print(f"valid loss: {valid_loss:.4f} valid wups: {valid_wups:.4f} valid acc: {valid_acc:.4f} valid f1: {valid_f1:.4f}")
 
             # save the last model
             torch.save({
