@@ -33,7 +33,7 @@ class MultimodalVQAModel(nn.Module):
         self.linear = nn.Linear(self.intermediate_dims,768)
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    def train_forward(self, questions: List[str], images: List[str]):
+    def forward(self, questions: List[str], images: List[str]):
         embbed_text, text_mask= self.text_embbeding(questions)
         embbed_vision, vison_mask = self.vision_embbeding(images)
         encoded_text, encoded_image = self.encoder(embbed_text, text_mask, embbed_vision, vison_mask)        
