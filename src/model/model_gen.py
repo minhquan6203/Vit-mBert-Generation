@@ -85,8 +85,8 @@ class MultimodalVQAModel(nn.Module):
     def forward(self, questions: List[str], images: List[str]):
         embbed_text, text_mask= self.text_embbeding(questions)
         embbed_vision, vison_mask = self.vision_embbeding(images)
-        encoded_text, encoded_image = self.encoder(embbed_text, text_mask, embbed_vision, vison_mask)        
-        fused_output = self.fusion(torch.cat([encoded_text, encoded_image], dim=1))
+        embbed_text, embbed_vision = self.encoder(embbed_text, text_mask, embbed_vision, vison_mask)        
+        fused_output = self.fusion(torch.cat([embbed_text, embbed_vision], dim=1))
         fused_output = self.linear(fused_output)
         fused_mask = self.fusion(torch.cat([text_mask.squeeze(1).squeeze(1),vison_mask.squeeze(1).squeeze(1)],dim=1))
         return fused_output,fused_mask
