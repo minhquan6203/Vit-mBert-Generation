@@ -107,7 +107,7 @@ class WuPalmerScoreCalculator:
         return np.mean(scores)
 
     #F1 score token level
-    def F1_token(labels: List[str], preds: List[str]) -> float:
+    def F1_token(self, labels: List[str], preds: List[str]) -> float:
         f1=F1()
         scores=[]
         for i in range(len(labels)):
