@@ -28,10 +28,9 @@ class STVQA_Task:
         self.dataloader = Load_Data(config)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.tokenizer = AutoTokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
-        self.decoder = Decoder(config).to(self.device)
         self.base_model=createMultimodalModelForVQA(config).to(self.device)
         self.compute_score = WuPalmerScoreCalculator(config)
-        self.optimizer = optim.Adam(self.decoder.parameters(), lr=self.learning_rate)
+        self.optimizer = optim.Adam(self.base_model.parameters(), lr=self.learning_rate)
 
     def training(self):
         if not os.path.exists(self.save_path):
@@ -69,20 +68,18 @@ class STVQA_Task:
             train_loss = 0.
             valid_loss = 0.
             for item in train:
-                fused_output, fused_mask  = self.base_model(item['question'],item['image_id'])
-                labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
-                logits, loss = self.decoder.train_forward(self.optimizer,fused_output,fused_mask,labels['input_ids'])
+                logits, loss = self.base_model(item['question'],item['image_id'],item['answer'])
+                loss.backward()
+                self.optimizer.step()
                 train_loss += loss
-            
+                print(loss)
             train_loss /=len(train)
             print(f"epoch {epoch + 1}/{self.num_epochs + initial_epoch}")
             print(f"train loss: {train_loss:.4f}")
             
             with torch.no_grad():
                 for item in valid:
-                    fused_output, fused_mask  = self.base_model(item['question'],item['image_id'])
-                    labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
-                    logits, loss = self.decoder.eval_forward(self.optimizer,fused_output,fused_mask,labels['input_ids'])
+                    logits, loss = self.base_model(item['question'],item['image_id'],item['answer'])
                     valid_loss += loss
                     wups,acc,f1 = self.compute_score.compute_metrics(item['answer'],logits)
                     valid_wups+=wups

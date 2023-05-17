@@ -82,14 +82,19 @@ class MultimodalVQAModel(nn.Module):
         self.linear = nn.Linear(self.intermediate_dims,config['decoder']['d_model'])
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    def forward(self, questions: List[str], images: List[str]):
+    def forward(self, questions: List[str], images: List[str], answers: List[str]):
         embbed_text, text_mask= self.text_embbeding(questions)
         embbed_vision, vison_mask = self.vision_embbeding(images)
         embbed_text, embbed_vision = self.encoder(embbed_text, text_mask, embbed_vision, vison_mask)        
+        
         fused_output = self.fusion(torch.cat([embbed_text, embbed_vision], dim=1))
         fused_output = self.linear(fused_output)
         fused_mask = self.fusion(torch.cat([text_mask.squeeze(1).squeeze(1),vison_mask.squeeze(1).squeeze(1)],dim=1))
-        return fused_output,fused_mask
+        
+        labels = self.tokenizer.batch_encode_plus(answers,padding=True,truncation=True,return_tensors='pt').to(self.device)
+        # logits,loss = self.decoder(fused_output,fused_mask,labels['input_ids'])
+        logits,loss = self.decoder(fused_output,labels['input_ids'])
+        return logits,loss
 
 def createMultimodalModelForVQA(config: Dict) -> MultimodalVQAModel:
     model = MultimodalVQAModel(config)
