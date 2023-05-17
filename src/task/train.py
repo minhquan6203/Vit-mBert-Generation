@@ -72,6 +72,8 @@ class STVQA_Task:
                 fused_output, fused_mask  = self.base_model(item['question'],item['image_id'])
                 labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
                 logits, loss = self.decoder.train_forward(fused_output,fused_mask,labels['input_ids'])
+                loss.backward()
+                optimizer.step()
                 train_loss += loss
             train_loss /=len(train)
             print(f"epoch {epoch + 1}/{self.num_epochs + initial_epoch}")
