@@ -31,6 +31,7 @@ class STVQA_Task:
         self.decoder = Decoder(config).to(self.device)
         self.base_model=createMultimodalModelForVQA(config).to(self.device)
         self.compute_score = WuPalmerScoreCalculator(config)
+        self.optimizer = optim.Adam(self.base_model.parameters(), lr=self.learning_rate)
 
     def training(self):
         if not os.path.exists(self.save_path):
@@ -39,11 +40,11 @@ class STVQA_Task:
         train = self.dataloader.get_dataloader(self.train_path,self.train_batch)
         valid = self.dataloader.get_dataloader(self.valid_path,self.valid_batch)
 
-        optimizer = optim.Adam(self.base_model.parameters(), lr=self.learning_rate)
+        
         if os.path.exists(os.path.join(self.save_path, 'last_model.pth')):
             checkpoint = torch.load(os.path.join(self.save_path, 'last_model.pth'))
             self.base_model.load_state_dict(checkpoint['model_state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             print('loaded the last saved model!!!')
             initial_epoch = checkpoint['epoch'] + 1
             print(f"continue training from epoch {initial_epoch}")
@@ -68,12 +69,12 @@ class STVQA_Task:
             train_loss = 0.
             valid_loss = 0.
             for item in train:
-                optimizer.zero_grad()
+                self.optimizer.zero_grad()
                 fused_output, fused_mask  = self.base_model(item['question'],item['image_id'])
                 labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
                 logits, loss = self.decoder.train_forward(fused_output,fused_mask,labels['input_ids'])
                 loss.backward()
-                optimizer.step()
+                self.optimizer.step()
                 train_loss += loss
             train_loss /=len(train)
             print(f"epoch {epoch + 1}/{self.num_epochs + initial_epoch}")
@@ -81,7 +82,7 @@ class STVQA_Task:
             
             with torch.no_grad():
                 for item in valid:
-                    optimizer.zero_grad()
+                    self.optimizer.zero_grad()
                     fused_output, fused_mask  = self.base_model(item['question'],item['image_id'])
                     labels = self.tokenizer.batch_encode_plus(item['answer'],padding='max_length',truncation=True,max_length=fused_output.shape[1],return_tensors='pt').to(self.device)
                     logits, loss = self.decoder.eval_forward(fused_output,fused_mask,labels['input_ids'])
@@ -101,7 +102,7 @@ class STVQA_Task:
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': self.base_model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
+                'optimizer_state_dict': self.optimizer.state_dict(),
                 'valid_acc': valid_acc}, os.path.join(self.save_path, 'last_model.pth'))
 
             # save the best model
@@ -116,7 +117,7 @@ class STVQA_Task:
                 torch.save({
                     'epoch': epoch,
                     'model_state_dict': self.base_model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
                     'valid_acc': valid_acc,}, os.path.join(self.save_path, 'best_model.pth'))
                 print(f"saved the best model with validation accuracy of {valid_acc:.4f}")
             

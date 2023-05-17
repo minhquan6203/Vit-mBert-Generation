@@ -11,7 +11,7 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
         self.gen = BertGenerationDecoder.from_pretrained(config['decoder']['text_decoder'])
         
-    def train_forward(self, encoder_features: torch.Tensor, encoder_attention_mask: torch.Tensor, answer_ids: torch.Tensor=None):
+    def train_forward(self,encoder_features: torch.Tensor, encoder_attention_mask: torch.Tensor, answer_ids: torch.Tensor=None):
         outputs = self.gen(inputs_embeds=encoder_features, attention_mask=encoder_attention_mask, labels=answer_ids)
         return outputs.logits, outputs.loss
 
