@@ -113,7 +113,7 @@ class STVQA_Task:
                     'model_state_dict': self.base_model.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
                     'valid_f1': valid_f1,}, os.path.join(self.save_path, 'best_model.pth'))
-                print(f"saved the best model with validation accuracy of {valid_acc:.4f}")
+                print(f"saved the best model with validation f1 token level of {valid_f1:.4f}")
             
             # early stopping
             if threshold >= self.patience:
