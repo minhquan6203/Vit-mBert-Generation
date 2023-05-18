@@ -79,7 +79,6 @@ class MultimodalVQAModel(nn.Module):
         self.encoder = CoAttentionEncoder(config)
         self.attention_weights = nn.Linear(self.intermediate_dims, 1)
         self.criterion = nn.CrossEntropyLoss()
-        self.linear = nn.Linear(self.intermediate_dims,config['decoder']['d_model'])
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     def forward(self, questions: List[str], images: List[str], answers: List[str]):
@@ -88,7 +87,6 @@ class MultimodalVQAModel(nn.Module):
         embbed_text, embbed_vision = self.encoder(embbed_text, text_mask, embbed_vision, vison_mask)        
         
         fused_output = self.fusion(torch.cat([embbed_text, embbed_vision], dim=1))
-        fused_output = self.linear(fused_output)
         fused_mask = self.fusion(torch.cat([text_mask.squeeze(1).squeeze(1),vison_mask.squeeze(1).squeeze(1)],dim=1))
         
         labels = self.tokenizer.batch_encode_plus(answers,padding='longest',truncation=True,return_tensors='pt').to(self.device)
