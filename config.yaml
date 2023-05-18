@@ -3,7 +3,7 @@ base:
 
 data:
   dataset_folder: data
-  images_folder: train
+  images_folder: images_total_data
   train_dataset: train.json
   val_dataset: dev.json
   test_dataset: test.json

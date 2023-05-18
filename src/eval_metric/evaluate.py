@@ -118,5 +118,6 @@ class WuPalmerScoreCalculator:
         prediction_probabilities = torch.nn.functional.softmax(logits, dim=-1)
         prediction_indices = prediction_probabilities.argmax(dim=-1)
         preds = self.tokenizer.batch_decode(prediction_indices)
-
+        print("labels: ",labels)
+        print("preds: ",preds)
         return self.batch_wup_measure(labels, preds), self.accuracy(labels, preds), self.F1_token(labels, preds)
