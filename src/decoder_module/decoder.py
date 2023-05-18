@@ -48,5 +48,9 @@ class Decoder(nn.Module):
         encoder_attention_mask=self.generate_encoder_mask(encoder_features)
         outputs = self.layer_norm(encoder_features)
         outputs = self.gen(inputs_embeds=outputs, attention_mask=encoder_attention_mask)
-        loss = self.criterion(outputs.logits.view(-1,outputs.logits.size(-1)),  answer_ids.view(-1))    
+        
+        shifted_prediction_scores = outputs.logits[:, :-1, :].contiguous()
+        shifted_answer_ids = answer_ids[:, 1:].contiguous()
+
+        loss = self.criterion(shifted_prediction_scores.view(-1,shifted_prediction_scores.size(-1)),  shifted_answer_ids.view(-1))    
         return outputs.logits, loss
