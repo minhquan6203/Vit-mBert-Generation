@@ -39,7 +39,7 @@ class Decoder(nn.Module):
     
     def forward(self, encoder_features: torch.Tensor,encoder_attention_mask: torch.Tensor, answer_ids: torch.Tensor=None):
         # Add padding to labels
-        answer_ids = F.pad(answer_ids, (0, self.max_len - answer_ids.size(1)), value=0)                
+        #answer_ids = F.pad(answer_ids, (0, self.max_len - answer_ids.size(1)), value=0)                
         #Sử dụng max pooling để giảm kích thước
         encoder_features = F.adaptive_max_pool1d(encoder_features.permute(0, 2, 1), answer_ids.size(1)).permute(0, 2, 1)
         for layer in self.layers:
