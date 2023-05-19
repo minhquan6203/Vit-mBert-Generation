@@ -54,13 +54,13 @@ class Decoder(nn.Module):
     #     mask = mask.to(torch.float32)
     #     return mask.unsqueeze(1)
     
-    def forward(self, encoder_features: torch.Tensor,encoder_attention_mask: torch.Tensor, answer_ids: torch.Tensor=None):
+    def forward(self, encoder_features: torch.Tensor,encoder_attention_mask: torch.Tensor, answer_ids: torch.Tensor=None, padding_idx: torch.Tensor=None):
         # Add padding to labels
         answer_ids = F.pad(answer_ids, (0, self.max_len - answer_ids.size(1)), value=0)                
         #Sử dụng max pooling để giảm kích thước
         encoder_features = F.adaptive_max_pool1d(encoder_features.permute(0, 2, 1), answer_ids.size(1)).permute(0, 2, 1)
         b_s, seq_len = answer_ids.shape
-        answer_padding_masks = generate_padding_mask(answer_ids, self.padding_idx).to(answer_ids.device)
+        answer_padding_masks = generate_padding_mask(answer_ids, padding_idx).to(answer_ids.device)
         answer_self_attention_masks = generate_sequential_mask(seq_len).to(answer_ids.device)
         answer_self_attention_masks = generate_self_attention_masks(answer_padding_masks, answer_self_attention_masks)
         for layer in self.layers:

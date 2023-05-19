@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-from transformers import  AutoModel, AutoTokenizer
+from transformers import  AutoModel, AutoTokenizer,BertTokenizer
 from typing import List, Dict, Optional
 from mask.masking import generate_padding_mask
 
@@ -48,7 +48,6 @@ from transformers.models.bert.modeling_bert import (
     BertEmbeddings,
     BertEncoder,
     BertPreTrainedModel,
-    BertTokenizer,
 )
 
 

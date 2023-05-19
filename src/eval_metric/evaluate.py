@@ -2,7 +2,7 @@ from typing import Dict, Tuple, List
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score
 from nltk.corpus import wordnet
-from transformers import  AutoModel, AutoTokenizer
+from transformers import BertTokenizer
 import torch
 
 #F1 score
@@ -30,7 +30,7 @@ class F1:
 
 class WuPalmerScoreCalculator:
     def __init__(self,config: Dict):
-        self.tokenizer = AutoTokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
+        self.tokenizer = BertTokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
     def wup_measure(self, a: str, b: str, similarity_threshold: float = 0.925):
         """
         Returns Wu-Palmer similarity score.

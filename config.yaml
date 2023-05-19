@@ -20,7 +20,7 @@ text_embedding:
   text_encoder: bert-base-multilingual-uncased
   d_features: 768
   layers: 3
-  head: 8
+  heads: 8
   d_model: 512
   dropout: 0.1
   load_pretrained: True
@@ -74,9 +74,9 @@ train:
   warmup_ratio: 0.0
   warmup_steps: 0
   metric_for_best_model: accuracy
-  per_device_train_batch_size: 64
-  per_device_valid_batch_size: 64
-  per_device_eval_batch_size: 64
+  per_device_train_batch_size: 32
+  per_device_valid_batch_size: 32
+  per_device_eval_batch_size: 32
 
 inference:
   checkpoint: checkpoint-3
