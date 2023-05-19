@@ -47,23 +47,17 @@ class Decoder(nn.Module):
         self.pos_emb = nn.Embedding.from_pretrained(sinusoid_encoding_table(max_len=self.max_len+1,d_model=config['decoder']['d_model'], padding_idx=0), freeze=True)
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
-    # def generate_encoder_mask(self, encoder_features: torch.Tensor) -> torch.Tensor:
-    #     mask = torch.sum(encoder_features, dim=2) != 0
-    #     mask = mask.to(torch.float32)
-    #     return mask.unsqueeze(1)
+    def generate_encoder_mask(self, encoder_features: torch.Tensor) -> torch.Tensor:
+        mask = torch.sum(encoder_features, dim=2) != 0
+        mask = mask.to(torch.float32)
+        return mask.unsqueeze(1)
     
-    def forward(self, encoder_features: torch.Tensor,encoder_attention_mask: torch.Tensor, answer_ids: torch.Tensor=None, padding_idx: torch.Tensor=None):
+    def forward(self, encoder_features: torch.Tensor,encoder_attention_mask: torch.Tensor=None, answer_ids: torch.Tensor=None, padding_idx: torch.Tensor=None):
         # Add padding to labels
         answer_ids = F.pad(answer_ids, (0, self.max_len - answer_ids.size(1)), value=0)                
         #Sử dụng max pooling để giảm kích thước
         encoder_features = F.adaptive_max_pool1d(encoder_features.permute(0, 2, 1), answer_ids.size(1)).permute(0, 2, 1)
-        # Lấy kích thước của encoder_features
-        batch_size, seq_length, feature_dim = encoder_features.size()
-
-        # Chỉ lấy những mask tương ứng với phần tử được max pooling của encoder feature
-        encoder_attention_mask = encoder_attention_mask[:, :seq_length]
-        encoder_attention_mask = encoder_attention_mask[torch.arange(batch_size), encoder_features.argmax(dim=2)]
-
+        
         b_s, seq_len = answer_ids.shape
         answer_padding_masks = generate_padding_mask(answer_ids, padding_idx).to(self.device)
         answer_self_attention_masks = generate_sequential_mask(seq_len).to(self.device)
@@ -71,7 +65,8 @@ class Decoder(nn.Module):
         for layer in self.layers:
             encoder_features = layer(queries=encoder_features, keys=encoder_features, values=encoder_features,self_attention_mask=answer_self_attention_masks)
         encoder_features = self.linear(encoder_features)
-        # encoder_attention_mask=self.generate_encoder_mask(encoder_features)
+        
+        encoder_attention_mask=self.generate_encoder_mask(encoder_features)
         outputs = self.layer_norm(encoder_features)
         outputs = self.gen(inputs_embeds=outputs, attention_mask=encoder_attention_mask)
         
