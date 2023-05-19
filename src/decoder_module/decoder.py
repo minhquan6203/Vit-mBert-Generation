@@ -45,6 +45,7 @@ class Decoder(nn.Module):
         self.layers = nn.ModuleList([DecoderLayer(config) for _ in range(self.N)])
         self.linear = nn.Linear(config["model"]["intermediate_dims"],config['decoder']['d_model'])
         self.pos_emb = nn.Embedding.from_pretrained(sinusoid_encoding_table(max_len=self.max_len+1,d_model=config['decoder']['d_model'], padding_idx=0), freeze=True)
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
     # def generate_encoder_mask(self, encoder_features: torch.Tensor) -> torch.Tensor:
     #     mask = torch.sum(encoder_features, dim=2) != 0
@@ -62,11 +63,10 @@ class Decoder(nn.Module):
         # Chỉ lấy những mask tương ứng với phần tử được max pooling của encoder feature
         encoder_attention_mask = encoder_attention_mask[:, :seq_length]
         encoder_attention_mask = encoder_attention_mask[torch.arange(batch_size), encoder_features.argmax(dim=2)]
-        print(encoder_attention_mask.shape)
 
         b_s, seq_len = answer_ids.shape
-        answer_padding_masks = generate_padding_mask(answer_ids, padding_idx).to(answer_ids.device)
-        answer_self_attention_masks = generate_sequential_mask(seq_len).to(answer_ids.device)
+        answer_padding_masks = generate_padding_mask(answer_ids, padding_idx).to(self.device)
+        answer_self_attention_masks = generate_sequential_mask(seq_len).to(self.device)
         answer_self_attention_masks = generate_self_attention_masks(answer_padding_masks, answer_self_attention_masks)
         for layer in self.layers:
             encoder_features = layer(queries=encoder_features, keys=encoder_features, values=encoder_features,self_attention_mask=answer_self_attention_masks)
