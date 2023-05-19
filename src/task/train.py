@@ -27,7 +27,6 @@ class STVQA_Task:
         self.save_path = config['train']['output_dir']
         self.dataloader = Load_Data(config)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.tokenizer = AutoTokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
         self.base_model=createMultimodalModelForVQA(config).to(self.device)
         self.compute_score = WuPalmerScoreCalculator(config)
         self.optimizer = optim.Adam(self.base_model.parameters(), lr=self.learning_rate)
