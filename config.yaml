@@ -2,7 +2,7 @@ base:
   use_cuda: True
 
 data:
-  dataset_folder: data
+  data_folder: data
   images_folder: images_total_data
   train_dataset: train.json
   val_dataset: dev.json
@@ -10,34 +10,29 @@ data:
   num_worker: 2
 
 tokenizer:
-  padding: longest
+  padding: max_length
   max_length: 64
   truncation: True
   return_token_type_ids: True
   return_attention_mask: True
 
 text_embedding:
-  text_encoder: bert-base-multilingual-uncased
+  text_encoder: vinai/phobert-base
+  freeze: True
   d_features: 768
-  layers: 3
-  heads: 8
   d_model: 512
   dropout: 0.1
-  load_pretrained: True
-  frezee: True
 
 vision_embedding:
   image_encoder: google/vit-base-patch16-224-in21k
+  freeze: True
   d_features: 768
-  layers: 3
-  head: 8
   d_model: 512
   dropout: 0.1
-  frezee: True
 
 attention:
-  layers: 3
-  heads: 8
+  layers: 4
+  heads: 16
   d_model: 512
   d_key: 64
   d_value: 64
@@ -48,21 +43,22 @@ attention:
 
 encoder:
   d_model: 512
-  layers: 3
-  heads: 8
+  layers: 4
+  heads: 16
 
 decoder:
   text_decoder: bert-base-multilingual-uncased
   d_model: 768
-  layers: 3
-  heads: 8
+  layers: 4
+  heads: 16
   max_len: 32
+  dropout: 0.1
 
 model:
   name: mbert-vit  # Custom name for the multimodal model
   type_model: "gen"
   intermediate_dims: 512
-  dropout: 0.3
+  dropout: 0.1
 
 train:
   output_dir: checkpoint

@@ -1,10 +1,8 @@
 from typing import Dict, Tuple, List
 import numpy as np
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score
 from nltk.corpus import wordnet
-from transformers import BertTokenizer
 import torch
-
 #F1 score
 class F1:
   def Precision(self,y_true,y_pred):
@@ -29,9 +27,7 @@ class F1:
   
 
 class WuPalmerScoreCalculator:
-    def __init__(self,config: Dict):
-        self.tokenizer = BertTokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
-    def wup_measure(self, a: str, b: str, similarity_threshold: float = 0.925):
+    def wup_measure(self, a: str, b: str, similarity_threshold: float = 0.9):
         """
         Returns Wu-Palmer similarity score.
         More specifically, it computes:
@@ -113,11 +109,3 @@ class WuPalmerScoreCalculator:
         for i in range(len(labels)):
             scores.append(f1.Compute(labels[i].split(),preds[i].split()))
         return np.mean(scores)
-
-    def compute_metrics(self, labels: List[str], logits: torch.Tensor) -> Dict[str, float]:
-        prediction_probabilities = torch.nn.functional.softmax(logits, dim=-1)
-        prediction_indices = prediction_probabilities.argmax(dim=-1)
-        preds = self.tokenizer.batch_decode(prediction_indices)
-        print("labels: ",labels)
-        print("preds: ",preds)
-        return self.batch_wup_measure(labels, preds), self.accuracy(labels, preds), self.F1_token(labels, preds)

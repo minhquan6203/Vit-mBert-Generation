@@ -12,8 +12,8 @@ class Vision_Embedding(nn.Module):
         super(Vision_Embedding,self).__init__()
         self.backbone = AutoModel.from_pretrained(config["vision_embedding"]["image_encoder"])
         self.preprocessor = AutoFeatureExtractor.from_pretrained(config["vision_embedding"]["image_encoder"])
-        if config["vision_embedding"]['frezee']:
         # freeze all parameters of pretrained model
+        if config["vision_embedding"]["freeze"]:
             for param in self.backbone.parameters():
                 param.requires_grad = False
             
@@ -21,10 +21,9 @@ class Vision_Embedding(nn.Module):
         self.gelu = nn.GELU()
         self.dropout = nn.Dropout(config["text_embedding"]['dropout'])
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.data_folder = config["data"]["dataset_folder"]
+        self.data_folder = config["data"]["data_folder"]
         self.image_folder = config["data"]["images_folder"]
-    def forward(self, images):
-        images=images.tolist()
+    def forward(self, images: List[str]):
         processed_images = self.preprocessor(
             images=[
                 Image.open(os.path.join(self.data_folder,self.image_folder, str(image_id).zfill(12) + ".jpg")

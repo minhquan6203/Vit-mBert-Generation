@@ -3,75 +3,26 @@ from torch import nn
 import torch.optim as optim
 from torch.nn import functional as F
 from typing import List, Dict, Optional
-from transformers import BertGenerationDecoder
-from attention_module.attentions import MultiHeadAtt
-from utils.positional_feed_forward import PositionWiseFeedForward
-from mask.masking import generate_padding_mask, generate_sequential_mask, generate_self_attention_masks, sinusoid_encoding_table
-# class DecoderLayer(nn.Module):
-#     def __init__(self, config):
-#         super(DecoderLayer, self).__init__()
-#         self.mhatt = MultiHeadAtt(config)
-#         self.pwff = PositionWiseFeedForward(config)
-
-#     def forward(self, queries, keys, values, attention_mask=None, **kwargs):
-#         att = self.mhatt(queries=queries, keys=keys, values=values, attention_mask=attention_mask)
-#         ff = self.pwff(att)
-
-#         return ff
-
-class DecoderLayer(nn.Module):
-    def __init__(self, config):
-        super(DecoderLayer, self).__init__()
-        self.self_attn = MultiHeadAtt(config)
-        self.pwff = PositionWiseFeedForward(config)
-
-    def forward(self, queries, keys, values, self_attention_mask, **kwargs):
-        self_att = self.self_attn(queries, keys, values, attention_mask=self_attention_mask, **kwargs)
-
-        ff = self.pwff(self_att)
-        
-        return ff
+from transformers import BertGenerationDecoder,BertGenerationConfig
 
 class Decoder(nn.Module):
     def __init__(self, config):
         super(Decoder, self).__init__()
-        self.gen = BertGenerationDecoder.from_pretrained(config['decoder']['text_decoder'])
-        for param in self.gen.parameters():
-            param.requires_grad = False
-        self.layer_norm = nn.LayerNorm(config["decoder"]['d_model'])
-        self.max_len = config["decoder"]['max_len']
-        self.N = config["decoder"]['layers']
-        self.criterion = nn.CrossEntropyLoss()
-        self.layers = nn.ModuleList([DecoderLayer(config) for _ in range(self.N)])
-        self.linear = nn.Linear(config["model"]["intermediate_dims"],config['decoder']['d_model'])
-        self.pos_emb = nn.Embedding.from_pretrained(sinusoid_encoding_table(max_len=self.max_len+1,d_model=config['decoder']['d_model'], padding_idx=0), freeze=True)
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    
-    def generate_encoder_mask(self, encoder_features: torch.Tensor) -> torch.Tensor:
-        mask = torch.sum(encoder_features, dim=2) != 0
-        mask = mask.to(torch.float32)
-        return mask.unsqueeze(1)
-    
-    def forward(self, encoder_features: torch.Tensor,encoder_attention_mask: torch.Tensor=None, answer_ids: torch.Tensor=None, padding_idx: torch.Tensor=None):
-        # Add padding to labels
-        answer_ids = F.pad(answer_ids, (0, self.max_len - answer_ids.size(1)), value=0)                
-        #Sử dụng max pooling để giảm kích thước
-        encoder_features = F.adaptive_max_pool1d(encoder_features.permute(0, 2, 1), answer_ids.size(1)).permute(0, 2, 1)
         
-        b_s, seq_len = answer_ids.shape
-        answer_padding_masks = generate_padding_mask(answer_ids, padding_idx).to(self.device)
-        answer_self_attention_masks = generate_sequential_mask(seq_len).to(self.device)
-        answer_self_attention_masks = generate_self_attention_masks(answer_padding_masks, answer_self_attention_masks)
-        for layer in self.layers:
-            encoder_features = layer(queries=encoder_features, keys=encoder_features, values=encoder_features,self_attention_mask=answer_self_attention_masks)
-        encoder_features = self.linear(encoder_features)
+        config_gen = BertGenerationConfig.from_pretrained(config['decoder']['text_decoder'])
+        config_gen.hidden_size=config['decoder']['d_model']
+        config_gen.num_hidden_layers=config['decoder']['layers']
+        config_gen.num_attention_heads=config['decoder']['heads']
+        config_gen.hidden_dropout_prob=config['decoder']['dropout']
+        config_gen.is_decoder=True
+        self.gen = BertGenerationDecoder.from_pretrained(config['decoder']['text_decoder'],config=config_gen)
         
-        encoder_attention_mask=self.generate_encoder_mask(encoder_features)
-        outputs = self.layer_norm(encoder_features)
-        outputs = self.gen(inputs_embeds=outputs, attention_mask=encoder_attention_mask)
-        
-        shifted_prediction_scores = outputs.logits[:, :-1, :].contiguous()
-        shifted_answer_ids = answer_ids[:, 1:].contiguous()
+    def forward(self, encoder_features: torch.Tensor,encoder_attention_mask: torch.Tensor=None, answer_ids: torch.Tensor=None):
 
-        loss = self.criterion(shifted_prediction_scores.view(-1,shifted_prediction_scores.size(-1)),  shifted_answer_ids.view(-1))    
-        return outputs.logits, loss
+        outputs = self.gen(inputs_embeds=encoder_features, attention_mask=encoder_attention_mask, labels=answer_ids)
+        
+        if answer_ids is not None:
+            return outputs.logits, outputs.loss
+        else:
+
+            return outputs.logits

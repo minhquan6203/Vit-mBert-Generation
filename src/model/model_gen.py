@@ -56,7 +56,7 @@ from vision_module.vision_embedding import  Vision_Embedding
 from attention_module.attentions import MultiHeadAtt
 from encoder_module.encoder import CoAttentionEncoder
 from decoder_module.decoder import Decoder
-from transformers import BertTokenizer
+from transformers import AutoTokenizer
 
 #lấy ý tưởng từ MCAN
 class MultimodalVQAModel(nn.Module):
@@ -70,7 +70,7 @@ class MultimodalVQAModel(nn.Module):
         self.d_vision = config["vision_embedding"]['d_features']
         self.text_embbeding = Text_Embedding(config)
         self.vision_embbeding = Vision_Embedding(config)
-        self.tokenizer = BertTokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
+        self.tokenizer = AutoTokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
         self.decoder = Decoder(config)
         self.fusion = nn.Sequential(
             nn.ReLU(),
@@ -90,7 +90,7 @@ class MultimodalVQAModel(nn.Module):
         fused_mask = self.fusion(torch.cat([text_mask.squeeze(1).squeeze(1),vison_mask.squeeze(1).squeeze(1)],dim=1))
         
         labels = self.tokenizer.batch_encode_plus(answers,padding='longest',truncation=True,return_tensors='pt').to(self.device)
-        logits,loss = self.decoder(fused_output,fused_mask,labels['input_ids'],self.tokenizer.pad_token_id)
+        logits,loss = self.decoder(fused_output,fused_mask,labels['input_ids'])
         return logits,loss
 
 def createMultimodalModelForVQA(config: Dict) -> MultimodalVQAModel:
