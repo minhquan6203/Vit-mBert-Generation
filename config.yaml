@@ -3,7 +3,7 @@ base:
 
 data:
   data_folder: data
-  images_folder: images_total_data
+  images_folder: train
   train_dataset: train.json
   val_dataset: dev.json
   test_dataset: test.json
@@ -11,13 +11,13 @@ data:
 
 tokenizer:
   padding: max_length
-  max_length: 64
+  max_length: 20
   truncation: True
   return_token_type_ids: True
   return_attention_mask: True
 
 text_embedding:
-  text_encoder: vinai/phobert-base
+  text_encoder: bert-base-multilingual-uncased
   freeze: True
   d_features: 768
   d_model: 512
@@ -48,6 +48,9 @@ encoder:
 
 decoder:
   text_decoder: bert-base-multilingual-uncased
+  padding: max_length
+  max_length: 10
+  truncation: True
   d_model: 768
   layers: 4
   heads: 16

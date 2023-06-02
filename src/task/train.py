@@ -6,7 +6,7 @@ import numpy as np
 import random
 from data_utils.load_data import Load_Data
 from utils.builder import build_model
-from text_module.tokenizer import Text_Tokenizer
+from transformers import AutoTokenizer
 from eval_metric.evaluate import WuPalmerScoreCalculator
 
 class STVQA_Task:
@@ -23,7 +23,10 @@ class STVQA_Task:
         self.valid_batch=config['train']['per_device_valid_batch_size']
         self.save_path = config['train']['output_dir']
         self.best_metric= config['train']['metric_for_best_model']
-        self.tokenizer = Text_Tokenizer(config)
+        self.tokenizer = AutoTokenizer.from_pretrained(config["decoder"]["text_decoder"])
+        self.padding = config["decoder"]["padding"]
+        self.max_length = config["decoder"]["max_length"]
+        self.truncation = config["decoder"]["truncation"]
         self.dataloader = Load_Data(config)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.base_model=build_model(config).to(self.device)

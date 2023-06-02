@@ -7,7 +7,7 @@ from datasets import load_dataset
 
 class Load_Data:
     def __init__(self, config: Dict):
-        self.data_folder = config['data']['dataset_folder']
+        self.data_folder = config['data']['data_folder']
         self.num_worker = config['data']['num_worker']
     
     def __getitem__(self, idx: int):

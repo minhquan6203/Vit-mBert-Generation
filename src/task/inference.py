@@ -14,6 +14,9 @@ class Predict:
     def __init__(self,config: Dict):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.tokenizer = AutoTokenizer.from_pretrained(config["decoder"]["text_decoder"])
+        self.padding = config["decoder"]["padding"]
+        self.max_length = config["decoder"]["max_length"]
+        self.truncation = config["decoder"]["truncation"]
         self.checkpoint_path=os.path.join(config["train"]["output_dir"], "best_model.pth")
         self.test_path=config['data']['test_dataset']
         self.batch_size=config['inference']['batch_size']
