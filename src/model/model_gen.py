@@ -56,7 +56,7 @@ from vision_module.vision_embedding import  Vision_Embedding
 from attention_module.attentions import MultiHeadAtt
 from encoder_module.encoder import CoAttentionEncoder
 from decoder_module.decoder import Decoder
-from transformers import AutoTokenizer
+from text_module.tokenizer import Text_Tokenizer
 
 #lấy ý tưởng từ MCAN
 class MultimodalVQAModel(nn.Module):
@@ -70,7 +70,7 @@ class MultimodalVQAModel(nn.Module):
         self.d_vision = config["vision_embedding"]['d_features']
         self.text_embbeding = Text_Embedding(config)
         self.vision_embbeding = Vision_Embedding(config)
-        self.tokenizer = AutoTokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
+        self.tokenizer = Text_Tokenizer(config)
         self.decoder = Decoder(config)
         self.fusion = nn.Sequential(
             nn.ReLU(),
@@ -89,10 +89,14 @@ class MultimodalVQAModel(nn.Module):
         fused_output = self.fusion(torch.cat([embbed_text, embbed_vision], dim=1))
         fused_mask = self.fusion(torch.cat([text_mask.squeeze(1).squeeze(1),vison_mask.squeeze(1).squeeze(1)],dim=1))
         
-        labels = self.tokenizer.batch_encode_plus(answers,padding='longest',truncation=True,return_tensors='pt').to(self.device)
-        logits,loss = self.decoder(fused_output,fused_mask,labels['input_ids'])
-        return logits,loss
-
+        if answers is not None:
+            labels = self.tokenizer(answers)
+            logits,loss = self.decoder(fused_output,fused_mask,labels['input_ids'])
+            return logits,loss
+        else:
+            logits=self.decoder(fused_output,fused_mask)
+            return logits
+        
 def createMultimodalModelForVQA(config: Dict) -> MultimodalVQAModel:
     model = MultimodalVQAModel(config)
     return model
