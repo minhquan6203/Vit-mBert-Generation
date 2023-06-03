@@ -16,9 +16,10 @@ class Decoder(nn.Module):
         config_gen.hidden_dropout_prob=config['decoder']['dropout']
         config_gen.is_decoder=True
         self.gen = BertGenerationDecoder.from_pretrained(config['decoder']['text_decoder'],config=config_gen)
+        self.linear=nn.Linear(config['model']['intermediate_dims'],config['decoder']['d_model'])
         
     def forward(self, encoder_features: torch.Tensor,encoder_attention_mask: torch.Tensor=None, answer_ids: torch.Tensor=None):
-
+        encoder_features=self.linear(encoder_features)
         outputs = self.gen(inputs_embeds=encoder_features, attention_mask=encoder_attention_mask, labels=answer_ids)
         
         if answer_ids is not None:
