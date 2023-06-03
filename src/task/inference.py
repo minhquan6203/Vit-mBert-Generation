@@ -43,9 +43,9 @@ class Predict:
         with torch.no_grad():
             for item in test_set:
                 logits = self.model(item['question'],item['image_id'].tolist())
-                prediction_probabilities = torch.nn.functional.softmax(logits, dim=-1)
-                prediction_indices = prediction_probabilities.argmax(dim=-1)
-                answers = self.tokenizer.batch_decode(prediction_indices)
+                predicted_ids = torch.argmax(logits, dim=-1)
+                answers = self.tokenizer.batch_decode(predicted_ids.squeeze().tolist(), skip_special_tokens=True)
+                answers = ['no answer' if answer == '' else answer for answer in answers]
                 y_preds.extend(answers)
                 gts.extend(item['answer'])
         print('accuracy on test:', self.compute_score.accuracy(gts,y_preds))

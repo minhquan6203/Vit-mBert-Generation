@@ -31,25 +31,24 @@ class MultimodalVQAModel(nn.Module):
             nn.Dropout(self.dropout),
         )
         self.encoder = CoAttentionEncoder(config)
-        self.attention_weights = nn.Linear(self.intermediate_dims, 1)
+        self.trans=nn.Linear(217, self.max_length)
         self.criterion = nn.CrossEntropyLoss()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
     def forward(self, questions: List[str], images: List[str], answers: List[str]):
         embbed_text, text_mask= self.text_embbeding(questions)
         embbed_vision, vison_mask = self.vision_embbeding(images)
         embbed_text, embbed_vision = self.encoder(embbed_text, text_mask, embbed_vision, vison_mask)        
-        
         fused_output = self.fusion(torch.cat([embbed_text, embbed_vision], dim=1))
+        fused_output = self.trans(fused_output.permute(0,2,1))
+        fused_output = fused_output.permute(0,2,1)
         fused_mask = self.fusion(torch.cat([text_mask.squeeze(1).squeeze(1),vison_mask.squeeze(1).squeeze(1)],dim=1))
-        
         if answers is not None:
             labels = self.tokenizer(answers,padding = self.padding, max_length = self.max_length,
-                                    truncation = self.truncation,return_tensors = 'pt').to(self.device)
-            logits,loss = self.decoder(fused_output,fused_mask,labels['input_ids'])
+                                    truncation = self.truncation,return_tensors = 'pt').to(self.device)                   
+            logits,loss = self.decoder(fused_output,None,labels['input_ids'])
             return logits,loss
         else:
-            logits=self.decoder(fused_output,fused_mask)
+            logits=self.decoder(fused_output)
             return logits
         
 def createMultimodalModelForVQA(config: Dict) -> MultimodalVQAModel:
