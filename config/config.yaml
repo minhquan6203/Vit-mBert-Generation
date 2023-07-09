@@ -18,22 +18,20 @@ tokenizer:
 
 text_embedding:
   type: pretrained #có 3 loại, pretrained, tf_idf, count_vec
-  text_encoder: t5_model
+  text_encoder: t5-base
   freeze: True
   d_features: 768
-  d_model: 512
   dropout: 0.1
 
 vision_embedding:
   image_encoder: google/vit-base-patch16-224-in21k
   freeze: True
   d_features: 768
-  d_model: 512
   dropout: 0.1
 
 attention:
   heads: 8
-  d_model: 512
+  d_model: 768
   d_key: 64
   d_value: 64
   d_ff: 2048
@@ -43,16 +41,16 @@ attention:
 
 encoder:
   type: guide # có 3 loại, co (co-attention), cross (cross-attention), guide (guide-attention)
-  d_model: 512
+  d_model: 768
   layers: 3
 
 decoder:
-  d_model: 512
+  d_model: 768
   seq_len: 10
 
 model:
   name: mcan_phobert-vit  # Custom name for the multimodal model
-  intermediate_dims: 512
+  intermediate_dims: 768
   dropout: 0.1
 
 train:

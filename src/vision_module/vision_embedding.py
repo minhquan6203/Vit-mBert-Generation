@@ -33,6 +33,6 @@ class Vision_Embedding(nn.Module):
         ).to(self.device)
         features = self.backbone(**processed_images).last_hidden_state
         padding_mask = generate_padding_mask(features, padding_idx=0)
-        out = self.proj(features)
-        out = self.dropout(self.gelu(out))
+        # features = self.proj(features)
+        out = self.dropout(self.gelu(features))
         return out, padding_mask

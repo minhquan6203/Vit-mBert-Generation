@@ -7,6 +7,7 @@ from vision_module.init_vision_embedding import  build_vision_embedding
 from encoder_module.init_encoder import build_encoder
 from data_utils.load_data import create_ans_space
 from decoder_module.init_decoder import build_decoder
+from transformers import T5Tokenizer
 
 class VQA_Model(nn.Module):
     def __init__(self,config: Dict):
@@ -22,8 +23,8 @@ class VQA_Model(nn.Module):
         self.text_embbeding = build_text_embbeding(config)
         self.vision_embbeding = build_vision_embedding(config)
 
+        self.tokenizer = T5Tokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
         self.fusion = nn.Sequential(
-            nn.Linear(self.intermediate_dims +self.intermediate_dims, self.intermediate_dims),
             nn.ReLU(),
             nn.Dropout(self.dropout),
         )
@@ -35,15 +36,23 @@ class VQA_Model(nn.Module):
     def forward(self, questions: List[str], images: List[str], labels: Optional[torch.LongTensor] = None):
         embbed_text, text_mask = self.text_embbeding(questions)
         embbed_vision, vison_mask = self.vision_embbeding(images)
-        encoded_text, encoded_image = self.encoder(embbed_text, text_mask, embbed_vision, vison_mask)
-        
-        fused_output = self.fusion(torch.cat([encoded_text, encoded_image], dim=1))
+        # encoded_text, encoded_image = self.encoder(embbed_text, text_mask, embbed_vision, vison_mask)
+        # fused_output = self.fusion(torch.cat([encoded_text, encoded_image], dim=1))
+
+        fused_output = self.fusion(torch.cat([embbed_text, embbed_vision], dim=1))
+
         logits = self.decoder(fused_output)
 
         if labels is not None:
-            logits=logits.view(-1,self.num_labels)
-            labels = labels.view(-1)
-            loss = self.criterion(logits, labels)
+            answers = self.tokenizer.batch_encode_plus(labels,padding='longest',truncation=True,return_tensors='pt').to(self.device)
+            answers_ids = answers['input_ids']
+            # logits=logits.view(-1,self.num_labels)
+            # labels = labels.view(-1)
+
+            shifted_prediction_scores = logits[:, :-1, :].contiguous()
+            shifted_answer_ids = answers_ids[:, 1:].contiguous()
+
+            loss = self.criterion(shifted_prediction_scores, shifted_answer_ids)
             return logits,loss
         else:
             return logits

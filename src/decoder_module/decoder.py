@@ -8,7 +8,7 @@ class Decoder(nn.Module):
  
         super(Decoder, self).__init__()
 
-        model = T5ForConditionalGeneration.from_pretrained(config['t5_model'])
+        model = T5ForConditionalGeneration.from_pretrained(config['text_embedding']['text_encoder'])
         dummy_encoder = list(nn.Sequential(*list(model.encoder.children())[1:]).children())   ## Removing the Embedding layer
         dummy_decoder = list(nn.Sequential(*list(model.decoder.children())[1:]).children())   ## Removing the Embedding Layer
 
@@ -24,7 +24,6 @@ class Decoder(nn.Module):
         self.classification_head = nn.Linear(config['decoder']['d_model'], num_labels)
 
     def forward(self, total_feat, predict_proba = False, predict_class = False):
-
 
         ## Extracting the feature
 
