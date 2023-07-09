@@ -8,7 +8,7 @@ import torch
 import transformers
 
 from task.train import STVQA_Task
-
+from task.inference import Predict
 
 def main(config_path: Text) -> None:
     transformers.logging.set_verbosity_error()
@@ -18,10 +18,12 @@ def main(config_path: Text) -> None:
         config = yaml.safe_load(conf_file)
     
     logging.info("Training started...")
-    task=STVQA_Task(config)
-    task.training()
+    STVQA_Task(config).training()
     logging.info("Training complete")
     
+    logging.info('now evaluate on test data...')
+    Predict(config).predict_submission()
+    logging.info('task done!!!')
 if __name__ == '__main__':
     args_parser = argparse.ArgumentParser()
     args_parser.add_argument('--config', dest='config', required=True)

@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-from transformers import  AutoModel, AutoTokenizer
+from transformers import T5Tokenizer, T5ForConditionalGeneration
 from typing import List, Dict, Optional
 from mask.masking import generate_padding_mask
 
@@ -9,8 +9,8 @@ from mask.masking import generate_padding_mask
 class Text_Embedding(nn.Module):
     def __init__(self, config: Dict):
         super(Text_Embedding,self).__init__()
-        self.tokenizer = AutoTokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
-        self.embedding = AutoModel.from_pretrained(config["text_embedding"]["text_encoder"])
+        self.tokenizer = T5Tokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
+        self.embedding = T5ForConditionalGeneration.from_pretrained(config["text_embedding"]["text_encoder"])
         # freeze all parameters of pretrained model
         if config['text_embedding']['freeze']:
             for param in self.embedding.parameters():
@@ -23,8 +23,8 @@ class Text_Embedding(nn.Module):
         self.padding = config["tokenizer"]["padding"]
         self.max_length = config["tokenizer"]["max_length"]
         self.truncation = config["tokenizer"]["truncation"]
-        self.return_token_type_ids = config["tokenizer"]["return_token_type_ids"]
-        self.return_attention_mask = config["tokenizer"]["return_attention_mask"]
+        self.return_token_type_ids = config["tokenizer"]["return_token_type_ids"],
+        self.return_attention_mask = config["tokenizer"]["return_attention_mask"],
 
     def forward(self, questions: List[str]):
         inputs = self.tokenizer(

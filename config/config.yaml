@@ -4,7 +4,7 @@ base:
 data:
   data_folder: data
   images_folder: train
-  train_dataset: dev.json
+  train_dataset: train.json
   val_dataset: dev.json
   test_dataset: test.json
   num_worker: 2
@@ -17,7 +17,8 @@ tokenizer:
   return_attention_mask: True
 
 text_embedding:
-  text_encoder: bert-base-multilingual-uncased
+  type: pretrained #có 3 loại, pretrained, tf_idf, count_vec
+  text_encoder: t5_model
   freeze: True
   d_features: 768
   d_model: 512
@@ -31,8 +32,7 @@ vision_embedding:
   dropout: 0.1
 
 attention:
-  layers: 4
-  heads: 16
+  heads: 8
   d_model: 512
   d_key: 64
   d_value: 64
@@ -42,24 +42,16 @@ attention:
   use_aoa: False
 
 encoder:
+  type: guide # có 3 loại, co (co-attention), cross (cross-attention), guide (guide-attention)
   d_model: 512
-  layers: 4
-  heads: 16
+  layers: 3
 
 decoder:
-  text_decoder: bert-base-multilingual-uncased
-  padding: max_length
-  max_length: 5
-  truncation: True
-  d_model: 768
-  layers: 4
-  heads: 16
-  max_len: 32
-  dropout: 0.1
+  d_model: 512
+  seq_len: 10
 
 model:
-  name: mbert-vit  # Custom name for the multimodal model
-  type_model: "gen"
+  name: mcan_phobert-vit  # Custom name for the multimodal model
   intermediate_dims: 512
   dropout: 0.1
 
@@ -68,14 +60,18 @@ train:
   seed: 12345
   num_train_epochs: 100
   patience: 5
-  learning_rate: 0.0001
+  learning_rate: 5.0e-5
   weight_decay: 0.0
   warmup_ratio: 0.0
   warmup_steps: 0
   metric_for_best_model: f1
-  per_device_train_batch_size: 8
-  per_device_valid_batch_size: 8
-  per_device_eval_batch_size: 8
+  per_device_train_batch_size: 64
+  per_device_valid_batch_size: 64
+  per_device_eval_batch_size: 64
+
+metrics:
+  metrics_folder: metrics
+  metrics_file: metrics.json
 
 inference:
-  checkpoint: checkpoint-3
+  batch_size: 256
