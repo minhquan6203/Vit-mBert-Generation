@@ -4,13 +4,6 @@ from torch.nn import functional as F
 from transformers import T5Tokenizer,T5EncoderModel
 from typing import List, Dict, Optional
 from mask.masking import generate_padding_mask
-
-import torch
-from torch import nn
-from torch.nn import functional as F
-from transformers import T5Tokenizer,T5EncoderModel
-from typing import List, Dict, Optional
-from mask.masking import generate_padding_mask
 from data_utils.vocab import create_vocab
 
 def Text_tokenizer(config):
