@@ -7,24 +7,25 @@ from vision_module.init_vision_embedding import  build_vision_embedding
 from encoder_module.init_encoder import build_encoder
 from data_utils.load_data import create_ans_space
 from decoder_module.init_decoder import build_decoder
-from transformers import T5Tokenizer
+from data_utils.vocab import create_vocab
+from text_module.text_embedding import Text_tokenizer
 
 class VQA_Model(nn.Module):
     def __init__(self,config: Dict):
      
         super(VQA_Model, self).__init__()
-        self.num_labels = 32128
         self.intermediate_dims = config["model"]["intermediate_dims"]
         self.dropout=config["model"]["dropout"]
         self.num_attention_heads=config["attention"]['heads']
         self.d_text = config["text_embedding"]['d_features']
         self.d_vision = config["vision_embedding"]['d_features']
         self.seq = config['decoder']['seq_len']
-
+        self.vocab,_=create_vocab(config)
         self.text_embbeding = build_text_embbeding(config)
         self.vision_embbeding = build_vision_embedding(config)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.tokenizer = T5Tokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
+        self.tokenizer = Text_tokenizer(config)
+        self.num_labels = len(self.tokenizer)
         self.fusion = nn.Sequential(
             nn.ReLU(),
             nn.Dropout(self.dropout),
