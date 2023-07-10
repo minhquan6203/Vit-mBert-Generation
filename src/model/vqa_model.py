@@ -7,7 +7,7 @@ from vision_module.init_vision_embedding import  build_vision_embedding
 from encoder_module.init_encoder import build_encoder
 from data_utils.load_data import create_ans_space
 from decoder_module.init_decoder import build_decoder
-from data_utils.vocab import create_vocab
+
 from text_module.text_embedding import Text_tokenizer
 
 class VQA_Model(nn.Module):
@@ -20,7 +20,6 @@ class VQA_Model(nn.Module):
         self.d_text = config["text_embedding"]['d_features']
         self.d_vision = config["vision_embedding"]['d_features']
         self.seq = config['decoder']['seq_len']
-        self.vocab,_=create_vocab(config)
         self.text_embbeding = build_text_embbeding(config)
         self.vision_embbeding = build_vision_embedding(config)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
