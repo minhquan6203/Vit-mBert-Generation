@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 from transformers import T5ForConditionalGeneration
-
+import torch.nn.functional as F
 
 class Decoder(nn.Module):
     def __init__(self, config, num_labels):
@@ -23,7 +23,7 @@ class Decoder(nn.Module):
 
         self.classification_head = nn.Linear(config['decoder']['d_model'], num_labels)
 
-    def forward(self, total_feat, predict_proba = False, predict_class = False):
+    def forward(self, total_feat):
 
         ## Extracting the feature
 
@@ -34,15 +34,8 @@ class Decoder(nn.Module):
         for layer in self.list_decoder:
           total_feat = layer(total_feat)[0]
         total_feat = self.residue_decoder(total_feat)
-
-        if predict_proba:
-          return total_feat.softmax(axis = -1)
-        
-        if predict_class:
-          return total_feat.argmax(axis = -1)
-
         answer_vector = self.classification_head(total_feat)[:, :self.seq, :]
-
-        return answer_vector
+        
+        return F.log_softmax(answer_vector, dim=-1)
 
 

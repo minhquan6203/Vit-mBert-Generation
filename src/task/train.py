@@ -8,7 +8,7 @@ from data_utils.load_data import Load_Data
 from model.init_model import build_model
 from eval_metric.evaluate import WuPalmerScoreCalculator
 from data_utils.load_data import create_ans_space
-
+from transformers import T5Tokenizer
 class STVQA_Task:
     def __init__(self, config):
         self.num_epochs = config['train']['num_train_epochs']
@@ -23,6 +23,7 @@ class STVQA_Task:
         self.valid_batch=config['train']['per_device_valid_batch_size']
         self.save_path = config['train']['output_dir']
         self.best_metric= config['train']['metric_for_best_model']
+        self.tokenizer = T5Tokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
         self.answer_space=create_ans_space(config)
         self.dataloader = Load_Data(config)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -67,8 +68,7 @@ class STVQA_Task:
             valid_loss = 0.
             for item in train:
                 self.optimizer.zero_grad()
-                labels=torch.tensor([self.answer_space.index(answer) for answer in item['answer']]).to(self.device)
-                logits, loss = self.base_model(item['question'],item['image_id'].tolist(),labels)
+                logits, loss = self.base_model(item['question'],item['image_id'].tolist(),item['answer'])
                 loss.backward()
                 self.optimizer.step()
                 train_loss += loss
@@ -79,10 +79,11 @@ class STVQA_Task:
             with torch.no_grad():
                 for item in valid:
                     self.optimizer.zero_grad()
-                    labels=torch.tensor([self.answer_space.index(answer) for answer in item['answer']]).to(self.device)
-                    logits, loss = self.base_model(item['question'],item['image_id'].tolist(),labels)
-                    preds = logits.argmax(axis=-1).cpu().numpy()
-                    answers = [self.answer_space[i] for i in preds]
+                    logits, loss = self.base_model(item['question'],item['image_id'].tolist(),item['answer'])
+                    
+                    predicted_ids = torch.argmax(logits, dim=-1)
+                    answers = self.tokenizer.batch_decode(predicted_ids.squeeze().tolist(), skip_special_tokens=True)
+                    answers = ['no answer' if answer == '' else answer for answer in answers]
                     valid_loss += loss
                     valid_wups+=self.compute_score.batch_wup_measure(item['answer'],answers)
                     valid_acc+=self.compute_score.accuracy(item['answer'],answers)
