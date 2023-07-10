@@ -9,7 +9,7 @@ from data_utils.vocab import create_vocab
 def Text_tokenizer(config):
     tokenizer = T5Tokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
     new_tokens,_ = create_vocab(config)
-    new_tokens = set(new_tokens) - set(tokenizer.vocab.keys())
+    new_tokens = set(new_tokens) - set(tokenizer.get_vocab().keys())
     tokenizer.add_tokens(list(new_tokens))
     return tokenizer
 
@@ -18,7 +18,7 @@ class Text_Embedding(nn.Module):
         super(Text_Embedding,self).__init__()
         self.tokenizer = Text_tokenizer(config)
         self.embedding = T5EncoderModel.from_pretrained(config["text_embedding"]["text_encoder"])
-        self.embedding=self.embedding.resize_token_embeddings(len(self.tokenizer))
+        self.embedding.resize_token_embeddings(len(self.tokenizer))
         # freeze all parameters of pretrained model
         if config['text_embedding']['freeze']:
             for param in self.embedding.parameters():

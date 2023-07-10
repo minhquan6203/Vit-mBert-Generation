@@ -9,7 +9,6 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
         tokenizer=Text_tokenizer(config)
         model = T5ForConditionalGeneration.from_pretrained(config['text_embedding']['text_encoder'])
-        model = model.resize_token_embeddings(len(tokenizer))
         dummy_encoder = list(nn.Sequential(*list(model.encoder.children())[1:]).children())   ## Removing the Embedding layer
         dummy_decoder = list(nn.Sequential(*list(model.decoder.children())[1:]).children())   ## Removing the Embedding Layer
 
