@@ -50,8 +50,8 @@ class VQA_Model(nn.Module):
                                                        max_length=self.seq,
                                                        padding='max_length',
                                                        truncation=True,
-                                                       return_tensors='pt').to(self.device)
-            answers_ids = answers['input_ids'].type(torch.LongTensor)
+                                                       return_tensors='pt')
+            answers_ids = answers['input_ids'].type(torch.LongTensor).to(self.device)
 
             shifted_prediction_scores = logits[:, :-1, :].contiguous()
             shifted_answer_ids = answers_ids[:, 1:].contiguous()
