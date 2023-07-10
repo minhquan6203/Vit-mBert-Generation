@@ -11,7 +11,7 @@ data:
 
 tokenizer:
   padding: max_length
-  max_length: 20
+  max_length: 40
   truncation: True
   return_token_type_ids: True
   return_attention_mask: True
@@ -48,7 +48,7 @@ encoder:
 
 decoder:
   d_model: 768
-  seq_len: 10
+  seq_len: 20
 
 model:
   name: mcan_phobert-vit  # Custom name for the multimodal model

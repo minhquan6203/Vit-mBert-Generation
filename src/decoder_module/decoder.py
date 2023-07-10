@@ -2,12 +2,10 @@ import torch.nn as nn
 import torch
 from transformers import T5ForConditionalGeneration
 import torch.nn.functional as F
-from text_module.text_embedding import Text_tokenizer
 class Decoder(nn.Module):
     def __init__(self, config, num_labels):
  
         super(Decoder, self).__init__()
-        tokenizer=Text_tokenizer(config)
         model = T5ForConditionalGeneration.from_pretrained(config['text_embedding']['text_encoder'])
         dummy_encoder = list(nn.Sequential(*list(model.encoder.children())[1:]).children())   ## Removing the Embedding layer
         dummy_decoder = list(nn.Sequential(*list(model.decoder.children())[1:]).children())   ## Removing the Embedding Layer
