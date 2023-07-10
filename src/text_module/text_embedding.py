@@ -15,7 +15,7 @@ from data_utils.vocab import create_vocab
 
 def Text_tokenizer(config):
     tokenizer = T5Tokenizer.from_pretrained(config["text_embedding"]["text_encoder"])
-    new_tokens = create_vocab(config)
+    new_tokens,_ = create_vocab(config)
     new_tokens = set(new_tokens) - set(tokenizer.vocab.keys())
     tokenizer.add_tokens(list(new_tokens))
     return tokenizer
