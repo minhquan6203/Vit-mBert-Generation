@@ -4,10 +4,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from text_module.text_embedding import Text_Embedding
 from vision_module.vision_embedding import  Vision_Embedding
-from attention_module.attentions import MultiHeadAtt
 from encoder_module.encoder import CoAttentionEncoder
 from decoder_module.decoder import Decoder
-from transformers import AutoTokenizer
+from text_module.text_embedding import Text_tokenizer
 
 #lấy ý tưởng từ MCAN
 class MultimodalVQAModel(nn.Module):
@@ -21,7 +20,7 @@ class MultimodalVQAModel(nn.Module):
         self.d_vision = config["vision_embedding"]['d_features']
         self.text_embbeding = Text_Embedding(config)
         self.vision_embbeding = Vision_Embedding(config)
-        self.tokenizer = AutoTokenizer.from_pretrained(config["decoder"]["text_decoder"])
+        self.tokenizer = Text_tokenizer(config)
         self.padding = config["decoder"]["padding"]
         self.max_length = config["decoder"]["max_length"]
         self.truncation = config["decoder"]["truncation"]
@@ -42,14 +41,15 @@ class MultimodalVQAModel(nn.Module):
         fused_output = self.trans(fused_output.permute(0,2,1))
         fused_output = fused_output.permute(0,2,1)
         fused_mask = self.fusion(torch.cat([text_mask.squeeze(1).squeeze(1),vison_mask.squeeze(1).squeeze(1)],dim=1))
+        fused_mask=None
         if answers is not None:
             labels = self.tokenizer(answers,padding = self.padding, max_length = self.max_length,
                                     truncation = self.truncation,return_tensors = 'pt').to(self.device)                   
-            logits,loss = self.decoder(fused_output,None,labels['input_ids'])
-            return logits,loss
+            out = self.decoder(fused_output,fused_mask,labels['input_ids'])
+            return out.logits,out.loss
         else:
-            logits=self.decoder(fused_output)
-            return logits
+            out = self.decoder(fused_output,fused_mask,labels['input_ids'])
+            return out.logits
         
 def createMultimodalModelForVQA(config: Dict) -> MultimodalVQAModel:
     model = MultimodalVQAModel(config)

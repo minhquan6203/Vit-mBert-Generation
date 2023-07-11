@@ -20,7 +20,4 @@ class Decoder(nn.Module):
     def forward(self, encoder_features: torch.Tensor, encoder_attention_mask: torch.Tensor=None, answer_ids: torch.Tensor=None):
         encoder_features = self.linear(encoder_features)
         outputs = self.gen(inputs_embeds=encoder_features, attention_mask=encoder_attention_mask, labels=answer_ids)
-        if answer_ids is not None:
-            return outputs.logits, outputs.loss
-        else:
-            return outputs.logits
+        return outputs
