@@ -42,6 +42,6 @@ class Text_Embedding(nn.Module):
         padding_mask = generate_padding_mask(input_ids, padding_idx=self.tokenizer.pad_token_id)
 
         features = self.embedding(input_ids=input_ids).last_hidden_state
-        # features = self.proj(features)
+        features = self.proj(features)
         out = self.dropout(self.gelu(features))
         return out, padding_mask

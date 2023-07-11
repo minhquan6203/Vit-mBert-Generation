@@ -86,7 +86,6 @@ class STVQA_Task:
                     
                     predicted_ids = torch.argmax(logits, dim=-1)
                     answers = self.tokenizer.batch_decode(predicted_ids.squeeze().tolist(), skip_special_tokens=True)
-                    # answers = ['no answer' if answer == '' else answer for answer in answers]
                     print(answers)
                     valid_loss += loss
                     valid_wups+=self.compute_score.batch_wup_measure(item['answer'],answers)
