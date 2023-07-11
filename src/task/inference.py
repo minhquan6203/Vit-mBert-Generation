@@ -4,16 +4,19 @@ import yaml
 import logging
 from typing import Text, Dict, List
 import pandas as pd
-from data_utils.load_data import create_ans_space
 import torch
 import transformers
-from model.init_model import get_model
+from utils.builder import get_model
 from eval_metric.evaluate import WuPalmerScoreCalculator
 from data_utils.load_data import  Load_Data
+from transformers import AutoTokenizer
 class Predict:
     def __init__(self,config: Dict):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.answer_space = create_ans_space(config)
+        self.tokenizer = AutoTokenizer.from_pretrained(config["decoder"]["text_decoder"])
+        self.padding = config["decoder"]["padding"]
+        self.max_length = config["decoder"]["max_length"]
+        self.truncation = config["decoder"]["truncation"]
         self.checkpoint_path=os.path.join(config["train"]["output_dir"], "best_model.pth")
         self.test_path=config['data']['test_dataset']
         self.batch_size=config['inference']['batch_size']
@@ -39,9 +42,10 @@ class Predict:
         self.model.eval()
         with torch.no_grad():
             for item in test_set:
-                output = self.model(item['question'],item['image_id'].tolist())
-                preds = output.argmax(axis=-1).cpu().numpy()
-                answers = [self.answer_space[i] for i in preds]
+                logits = self.model(item['question'],item['image_id'].tolist())
+                predicted_ids = torch.argmax(logits, dim=-1)
+                answers = self.tokenizer.batch_decode(predicted_ids.squeeze().tolist(), skip_special_tokens=True)
+                answers = ['no answer' if answer == '' else answer for answer in answers]
                 y_preds.extend(answers)
                 gts.extend(item['answer'])
         print('accuracy on test:', self.compute_score.accuracy(gts,y_preds))

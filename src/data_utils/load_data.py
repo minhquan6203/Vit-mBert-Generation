@@ -22,7 +22,7 @@ class Load_Data:
             'answer':answer
         }
         
-    def load_annotations(self, json_name) -> List[Dict]:
+    def load_annotations(self, json_name: Dict) -> List[Dict]:
         with open(os.path.join(self.data_folder,json_name)) as f:
             json_data =json.load(f)
         annotations = []
@@ -49,7 +49,7 @@ class Load_Data:
 
 
 
-def create_ans_space(config: Dict):
+def create_ans_space(self, config: Dict):
     data_folder=config['data']['data_folder']
     train_set=config["data"]["train_dataset"]
     val_set=config["data"]["val_dataset"]
@@ -68,6 +68,6 @@ def create_ans_space(config: Dict):
     for data_file in dataset.values():
         for ans in data_file['answers']:
             answer_space.append(ans[0])
-    answer_space = sorted(list(set(answer_space)))
+    answer_space = list(set(answer_space))
 
     return answer_space

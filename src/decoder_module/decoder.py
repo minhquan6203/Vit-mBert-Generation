@@ -1,39 +1,26 @@
-import torch.nn as nn
 import torch
-from transformers import T5ForConditionalGeneration
-import torch.nn.functional as F
+from torch import nn
+import torch.optim as optim
+from torch.nn import functional as F
+from typing import List, Dict, Optional
+from transformers import BertGenerationDecoder,BertGenerationConfig
+
 class Decoder(nn.Module):
-    def __init__(self, config, num_labels):
- 
+    def __init__(self, config):
         super(Decoder, self).__init__()
-        model = T5ForConditionalGeneration.from_pretrained(config['text_embedding']['text_encoder'])
-        dummy_encoder = list(nn.Sequential(*list(model.encoder.children())[1:]).children())   ## Removing the Embedding layer
-        dummy_decoder = list(nn.Sequential(*list(model.decoder.children())[1:]).children())   ## Removing the Embedding Layer
-
-        ## Using the T5 Encoder
-
-        self.list_encoder = nn.Sequential(*list(dummy_encoder[0]))
-        self.residue_encoder = nn.Sequential(*list(dummy_encoder[1:]))
-        self.list_decoder = nn.Sequential(*list(dummy_decoder[0]))
-        self.residue_decoder = nn.Sequential(*list(dummy_decoder[1:]))
-
-        self.seq = config['decoder']['seq_len']
-
-        self.classification_head = nn.Linear(config['decoder']['d_model'], num_labels)
-
-    def forward(self, total_feat):
-
-        ## Extracting the feature
-
-        for layer in self.list_encoder:
-          total_feat = layer(total_feat)[0]
-        total_feat = self.residue_encoder(total_feat)
-
-        for layer in self.list_decoder:
-          total_feat = layer(total_feat)[0]
-        total_feat = self.residue_decoder(total_feat)
-        answer_vector = self.classification_head(total_feat)[:, :self.seq, :]
         
-        return F.log_softmax(answer_vector, dim=-1)
-
-
+        config_gen = BertGenerationConfig.from_pretrained(config['decoder']['text_decoder'])
+        config_gen.hidden_size=config['decoder']['d_model']
+        config_gen.num_hidden_layers=config['decoder']['layers']
+        config_gen.num_attention_heads=config['decoder']['heads']
+        config_gen.hidden_dropout_prob=config['decoder']['dropout']
+        config_gen.is_decoder=True
+        self.gen = BertGenerationDecoder.from_pretrained(config['decoder']['text_decoder'],config=config_gen)
+        self.linear=nn.Linear(config['model']['intermediate_dims'],config['decoder']['d_model'])
+    def forward(self, encoder_features: torch.Tensor, encoder_attention_mask: torch.Tensor=None, answer_ids: torch.Tensor=None):
+        encoder_features = self.linear(encoder_features)
+        outputs = self.gen(inputs_embeds=encoder_features, attention_mask=encoder_attention_mask, labels=answer_ids)
+        if answer_ids is not None:
+            return outputs.logits, outputs.loss
+        else:
+            return outputs.logits

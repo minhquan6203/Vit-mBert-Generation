@@ -3,37 +3,37 @@ base:
 
 data:
   data_folder: data
-  images_folder: images_total_data
-  train_dataset: train.json
+  images_folder: train
+  train_dataset: dev.json
   val_dataset: dev.json
   test_dataset: test.json
   num_worker: 2
 
 tokenizer:
   padding: max_length
-  max_length: 40
+  max_length: 20
   truncation: True
   return_token_type_ids: True
   return_attention_mask: True
 
 text_embedding:
-  type: pretrained #có 3 loại, pretrained, tf_idf, count_vec
-  text_encoder: t5-base
+  text_encoder: bert-base-multilingual-uncased
   freeze: True
   d_features: 768
-  d_model: 768
+  d_model: 512
   dropout: 0.1
 
 vision_embedding:
   image_encoder: google/vit-base-patch16-224-in21k
   freeze: True
   d_features: 768
-  d_model: 768
+  d_model: 512
   dropout: 0.1
 
 attention:
-  heads: 8
-  d_model: 768
+  layers: 4
+  heads: 16
+  d_model: 512
   d_key: 64
   d_value: 64
   d_ff: 2048
@@ -42,17 +42,25 @@ attention:
   use_aoa: False
 
 encoder:
-  type: guide # có 3 loại, co (co-attention), cross (cross-attention), guide (guide-attention)
-  d_model: 768
-  layers: 3
+  d_model: 512
+  layers: 4
+  heads: 16
 
 decoder:
+  text_decoder: bert-base-multilingual-uncased
+  padding: max_length
+  max_length: 5
+  truncation: True
   d_model: 768
-  seq_len: 20
+  layers: 4
+  heads: 16
+  max_len: 32
+  dropout: 0.1
 
 model:
-  name: mcan_phobert-vit  # Custom name for the multimodal model
-  intermediate_dims: 768
+  name: mbert-vit  # Custom name for the multimodal model
+  type_model: "gen"
+  intermediate_dims: 512
   dropout: 0.1
 
 train:
@@ -60,18 +68,14 @@ train:
   seed: 12345
   num_train_epochs: 100
   patience: 5
-  learning_rate: 1
+  learning_rate: 0.0001
   weight_decay: 0.0
   warmup_ratio: 0.0
   warmup_steps: 0
   metric_for_best_model: f1
-  per_device_train_batch_size: 16
-  per_device_valid_batch_size: 16
-  per_device_eval_batch_size: 16
-
-metrics:
-  metrics_folder: metrics
-  metrics_file: metrics.json
+  per_device_train_batch_size: 8
+  per_device_valid_batch_size: 8
+  per_device_eval_batch_size: 8
 
 inference:
-  batch_size: 256
+  checkpoint: checkpoint-3

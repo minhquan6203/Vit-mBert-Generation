@@ -5,10 +5,10 @@ import os
 import numpy as np
 import random
 from data_utils.load_data import Load_Data
-from model.init_model import build_model
+from utils.builder import build_model
+from transformers import AutoTokenizer
 from eval_metric.evaluate import WuPalmerScoreCalculator
-from data_utils.load_data import create_ans_space
-from text_module.text_embedding import Text_tokenizer
+
 class STVQA_Task:
     def __init__(self, config):
         self.num_epochs = config['train']['num_train_epochs']
@@ -23,8 +23,10 @@ class STVQA_Task:
         self.valid_batch=config['train']['per_device_valid_batch_size']
         self.save_path = config['train']['output_dir']
         self.best_metric= config['train']['metric_for_best_model']
-        self.tokenizer = Text_tokenizer(config)
-        self.answer_space=create_ans_space(config)
+        self.tokenizer = AutoTokenizer.from_pretrained(config["decoder"]["text_decoder"])
+        self.padding = config["decoder"]["padding"]
+        self.max_length = config["decoder"]["max_length"]
+        self.truncation = config["decoder"]["truncation"]
         self.dataloader = Load_Data(config)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.base_model=build_model(config).to(self.device)
@@ -70,6 +72,7 @@ class STVQA_Task:
                 self.optimizer.zero_grad()
                 logits, loss = self.base_model(item['question'],item['image_id'].tolist(),item['answer'])
                 loss.backward()
+                print(loss)
                 self.optimizer.step()
                 train_loss += loss
             train_loss /=len(train)
@@ -83,6 +86,8 @@ class STVQA_Task:
                     
                     predicted_ids = torch.argmax(logits, dim=-1)
                     answers = self.tokenizer.batch_decode(predicted_ids.squeeze().tolist(), skip_special_tokens=True)
+                    answers = ['no answer' if answer == '' else answer for answer in answers]
+                    print(answers)
                     valid_loss += loss
                     valid_wups+=self.compute_score.batch_wup_measure(item['answer'],answers)
                     valid_acc+=self.compute_score.accuracy(item['answer'],answers)
